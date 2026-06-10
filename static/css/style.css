@@ -1,0 +1,51 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
+header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+.stats-bar { background: #34495e; color: #ecf0f1; padding: 5px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; font-weight: bold; }
+.toolbar { padding: 15px; background: white; display: flex; gap: 10px; border-bottom: 1px solid #ddd; }
+
+/* צבעי סוג כלוב */
+.type-gray        { background-color: #bdc3c7 !important; color: black; }
+.type-blue        { background-color: #3498db !important; color: white; }
+.type-red         { background-color: #e74c3c !important; color: white; }
+.type-yellow      { background-color: #f1c40f !important; color: black; }
+.type-dark-purple { background-color: #5b2c6f !important; color: white !important; }
+.type-green       { background-color: #27ae60 !important; color: white !important; }
+.type-light-purple{ background-color: #d7bde2 !important; color: black; }
+.type-turquoise   { background-color: #1abc9c !important; color: white !important; }
+
+/* גריד */
+.grid-container { padding: 20px; display: flex; justify-content: center; }
+.grid { display: grid; grid-template-columns: 50px repeat(4, 180px); gap: 10px; }
+.cell { height: 130px; border: 1px dashed #bbb; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #fff; text-align: center; padding: 5px; }
+.cell.occupied { border: 2px solid #333; }
+.cage-title { font-size: 18px; font-weight: 900; }
+.cage-count { font-size: 14px; font-weight: 700; background: rgba(255,255,255,0.4); padding: 2px 10px; border-radius: 12px; }
+
+/* מודאלים */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal { background: white; padding: 25px; border-radius: 12px; width: 850px; max-height: 95vh; overflow-y: auto; }
+.modal-content { background: white; padding: 20px; border-radius: 8px; width: 300px; }
+
+/* טבלאות */
+.mice-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.mice-table th { background: #2c3e50; color: white; padding: 10px; text-align: left; }
+.mice-table td { padding: 8px; border-bottom: 1px solid #eee; }
+
+/* כפתורים */
+.btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-main    { background: #2c3e50; color: white; }
+.btn-danger  { background: #e74c3c; color: white; }
+.table-btn   { padding: 4px 8px; margin: 0 2px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; color: white; }
+.btn-record  { background-color: #27ae60; }
+.btn-edit    { background-color: #3498db; }
+.btn-sacrifice { background-color: #e74c3c; }
+
+/* שאר */
+input, select { width: 100%; padding: 10px; margin: 5px 0 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+.event-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 15px; }
+
+/* אנימציית אזהרת כפילות Mark */
+.blink-red-border { border: 4px solid red !important; animation: blink-animation 1s infinite; }
+@keyframes blink-animation { 50% { opacity: 0.5; } }

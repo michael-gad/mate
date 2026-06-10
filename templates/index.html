@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DSD LAB - Colony Management</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <header>
+        <h1>DSD LAB - Mice Colony Management</h1>
+        <div class="stats-bar">Total Mice: <span id="totalMice">0</span></div>
+    </header>
+
+    <div class="toolbar">
+        <button class="btn btn-main" onclick="openMouseModal()">+ Add Mouse</button>
+        <button class="btn btn-main" style="background:#2980b9" onclick="location.href='/api/export/cages'">Export Cages</button>
+        <button class="btn btn-main" style="background:#2980b9" onclick="location.href='/api/export/mice'">Export Mice</button>
+        <button class="btn btn-main" style="background:#8e44ad; color:white;" onclick="openArchiveOnly()">Archive</button>
+        <div style="margin-left:auto">
+            <input type="file" id="excelFile" style="display:none" onchange="handleImport(this)">
+            <button class="btn" style="background:#27ae60; color:white" onclick="triggerImport('cages')">Import Cages</button>
+            <button class="btn" style="background:#27ae60; color:white" onclick="triggerImport('mice')">Import Mice</button>
+        </div>
+    </div>
+
+    <div class="grid-container"><div class="grid" id="mainGrid"></div></div>
+
+    <!-- ===== מודאל כלוב ===== -->
+    <div class="modal-overlay" id="cageModal">
+        <div class="modal">
+            <div id="miceInCageSection">
+                <h3>Mice in Cage</h3>
+                <table class="mice-table" border="1" style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>Mouse ID</th><th>Mark</th><th>Sex</th><th>DOB</th>
+                            <th>Father</th><th>Mother</th><th>CBZ start date</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="miceTableBody"></tbody>
+                </table>
+            </div>
+            <hr>
+            <h3 id="cageModalTitle" style="margin-top:15px">Cage Settings</h3>
+            <label>Cage ID *</label><input type="text" id="cageId">
+            <label>Cage Name *</label><input type="text" id="cageName">
+            <label>Type</label>
+            <select id="cageType">
+                <option value="Experiment Control">Experiment Control</option>
+                <option value="Experiment CBZ 200 ng/L">Experiment CBZ 200 ng/L</option>
+                <option value="Experiment CBZ 2000 ng/L">Experiment CBZ 2000 ng/L</option>
+                <option value="Mating">Mating</option>
+                <option value="Mating CBZ 200 ng/L">Mating CBZ 200 ng/L</option>
+                <option value="Stock male">Stock male</option>
+                <option value="Single male">Single male</option>
+                <option value="Stock female">Stock female</option>
+            </select>
+            <label>Date Opened</label><input type="date" id="cageDate">
+            <label>Row:</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="range" id="rSlider" min="1" max="6" value="1" oninput="document.getElementById('cRow').value=this.value">
+                <input type="number" id="cRow" min="1" max="6" style="width:50px;" oninput="document.getElementById('rSlider').value=this.value">
+            </div>
+            <label>Column:</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="range" id="colSlider" min="1" max="4" value="1" oninput="document.getElementById('cCol').value=this.value">
+                <input type="number" id="cCol" min="1" max="4" style="width:50px;" oninput="document.getElementById('colSlider').value=this.value">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn btn-main" onclick="saveCage()">Save Cage</button>
+                <button id="btnDeleteCage" class="btn btn-danger" onclick="deleteCage()">Delete Cage</button>
+                <button class="btn" onclick="closeCage()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== מודאל ניסוי / הזדווגות ===== -->
+    <div class="modal-overlay" id="expModal">
+        <div class="modal" style="width:580px;">
+            <h3>Experiment Tracking (Mating)</h3>
+            <p id="expMouseInfo" style="font-weight:bold; color:#2c3e50; margin-bottom:15px;"></p>
+
+            <!-- טופס זיווג חדש -->
+            <div class="event-box" id="matingSetup">
+                <label>Select Male *</label><select id="expMaleId"></select>
+                <label>Mating Date *</label><input type="date" id="matingDate">
+                <button class="btn btn-main" style="width:100%" onclick="saveMating()">&#9654; Start Mating Tracking</button>
+            </div>
+
+            <!-- מעקב ניסוי פעיל -->
+            <div id="pregnancyTracking" style="display:none">
+                <div class="event-box" style="background:#fff3cd; position:relative;">
+                    <p><strong>Mating Date:</strong> <span id="matingDateDisplay"></span></p>
+                    <p><strong>Mating Male:</strong> <span id="matingMaleDisplay"></span></p>
+                    <p><strong>Sacrifice (GD 14.5):</strong> <span id="sacDate"></span></p>
+                    <p><strong>Status:</strong> <span id="pregStatus" style="font-weight:bold"></span></p>
+                    <div style="position:absolute; top:10px; right:10px; display:flex; gap:5px;">
+                        <button class="btn" style="padding:2px 8px; font-size:11px;" onclick="editMating()">Edit</button>
+                        <button class="btn btn-main" style="padding:2px 8px; font-size:11px;" onclick="startNewMating()">+ New Mating</button>
+                    </div>
+                </div>
+                <h4 style="margin:12px 0 6px">Pregnancy Weights</h4>
+                <table class="mice-table">
+                    <thead><tr><th>Date</th><th>GD</th><th>Weight (g)</th><th></th></tr></thead>
+                    <tbody id="pregWeightBody"></tbody>
+                </table>
+                <div class="event-box" style="margin-top:10px">
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <input type="date" id="newPregDate" style="margin:0">
+                        <input type="number" id="newPregWeight" step="0.1" placeholder="g" style="margin:0; width:80px">
+                        <button class="btn btn-main" onclick="addPregWeight()">Add Weight</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- היסטוריית זיווגים קודמים -->
+            <div id="matingHistorySection" style="display:none; margin-top:15px;">
+                <h4 style="margin-bottom:6px; color:#7f8c8d;">Previous Matings</h4>
+                <table class="mice-table" style="font-size:13px;">
+                    <thead><tr><th>Mating Date</th><th>Male</th><th>Sacrifice Date</th><th></th></tr></thead>
+                    <tbody id="matingHistoryBody"></tbody>
+                </table>
+            </div>
+
+            <button class="btn" style="width:100%; margin-top:15px" onclick="document.getElementById('expModal').classList.remove('active')">Close</button>
+        </div>
+    </div>
+
+    <!-- ===== מודאל אירוע (משקל / המלטה) ===== -->
+    <div class="modal-overlay" id="weightModal">
+        <div class="modal" style="width:450px;">
+            <h3>Event Logging</h3>
+            <p id="eventMouseInfo" style="margin-bottom:15px; font-weight:bold;"></p>
+            <div class="event-box">
+                <label>Date</label><input type="date" id="eventDate" onchange="updateWeaningDate()">
+                <div style="margin:10px 0; display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" id="isLitter" onchange="toggleEventType()" style="width:18px; height:18px;">
+                    <label style="margin:0" for="isLitter">המלטה (Litter)</label>
+                </div>
+                <div id="weightFields"><label>Weight (g)</label><input type="number" id="weightValue" step="0.01"></div>
+                <div id="litterFields" style="display:none; background:#eee; padding:10px; border-radius:5px;">
+                    <label>Pups</label><input type="number" id="pupsCount">
+                    <label>Weaning (+21d)</label><input type="date" id="weaningDate">
+                </div>
+                <button class="btn btn-main" style="width:100%; margin-top:10px" onclick="saveEvent()">Save Event</button>
+            </div>
+            <div style="max-height:200px; overflow-y:auto">
+                <table class="mice-table">
+                    <thead><tr><th>Type</th><th>Date</th><th>Info</th><th>Actions</th></tr></thead>
+                    <tbody id="eventHistoryBody"></tbody>
+                </table>
+            </div>
+            <button class="btn" style="width:100%; margin-top:10px" onclick="document.getElementById('weightModal').classList.remove('active')">Back</button>
+        </div>
+    </div>
+
+    <!-- ===== מודאל עכבר (הוספה / עריכה) ===== -->
+    <div class="modal-overlay" id="mouseModal">
+        <div class="modal" style="width:450px;">
+            <h3>Mouse Details</h3>
+            <label>Mouse ID *</label><input type="text" id="mId">
+            <label>Mark *</label>
+            <select id="mMark">
+                <option value="">--Select--</option>
+                <option>NADA</option><option>R</option><option>L</option><option>1R1L</option>
+                <option>2R</option><option>2L</option><option>2R1L</option><option>1R2L</option>
+            </select>
+            <label>Sex *</label>
+            <select id="mSex"><option value="">--Select--</option><option>M</option><option>F</option></select>
+            <label>DOB *</label><input type="date" id="mDob">
+            <label>Father ID</label><input type="text" id="mFather">
+            <label>Mother ID</label><input type="text" id="mMother">
+            <label>Cage ID *</label><select id="mCage"></select>
+            <label>CBZ Start</label><input type="date" id="mCbz">
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn btn-main" onclick="window.isEditMode ? updateMouse() : saveMouse()">Save Mouse</button>
+                <button class="btn" onclick="closeMouseModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== מודאל ארכיון ===== -->
+    <div id="archiveModal" class="modal-overlay">
+        <div class="modal" style="background:white; padding:20px; border-radius:8px; width:860px;">
+            <h3>Archive</h3>
+            <table class="mice-table" style="width:100%; margin-top:15px;">
+                <thead>
+                    <tr>
+                        <th>Mouse ID</th><th>Mark</th><th>Sex</th><th>Cage ID</th>
+                        <th>Sacrificed Date</th><th>Reason</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="archiveTableBody"></tbody>
+            </table>
+            <button class="btn" style="margin-top:15px;" onclick="closeArchive()">Close</button>
+        </div>
+    </div>
+
+    <!-- ===== מודאל צפייה בעכבר מהארכיון ===== -->
+    <div id="archiveMouseModal" class="modal-overlay">
+        <div class="modal" style="width:450px;">
+            <h3 style="margin-bottom:15px;">&#128065; Archived Mouse Details</h3>
+            <table style="width:100%; border-collapse:collapse; font-size:15px;">
+                <tr><td style="padding:6px; color:#666; width:40%">Mouse ID</td><td id="amId" style="font-weight:bold;"></td></tr>
+                <tr><td style="padding:6px; color:#666;">Mark</td><td id="amMark"></td></tr>
+                <tr><td style="padding:6px; color:#666;">Sex</td><td id="amSex"></td></tr>
+                <tr><td style="padding:6px; color:#666;">Date of Birth</td><td id="amDob"></td></tr>
+                <tr><td style="padding:6px; color:#666;">Original Cage</td><td id="amCage"></td></tr>
+                <tr><td style="padding:6px; color:#666;">Father</td><td id="amFather"></td></tr>
+                <tr><td style="padding:6px; color:#666;">Mother</td><td id="amMother"></td></tr>
+                <tr><td style="padding:6px; color:#666;">CBZ Start</td><td id="amCbz"></td></tr>
+                <tr style="background:#fff0f0;"><td style="padding:6px; color:#666;">Sacrificed</td><td id="amSacDate" style="color:#e74c3c; font-weight:bold;"></td></tr>
+                <tr style="background:#fff0f0;"><td style="padding:6px; color:#666;">Reason</td><td id="amReason"></td></tr>
+            </table>
+            <div style="display:flex; gap:10px; margin-top:18px;">
+                <button class="btn btn-main" style="background:#27ae60;" onclick="restoreMouse()">&#8617; Restore to Cage</button>
+                <button class="btn" onclick="document.getElementById('archiveMouseModal').classList.remove('active')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== מודאל הקרבה ===== -->
+    <div id="sacrificeModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Sacrifice Mouse</h3>
+            <p id="sacrificeMouseText"></p>
+            <label>Date:</label><input type="date" id="sacrificeDate">
+            <label>Reason:</label><input type="text" id="sacrificeReason" placeholder="Optional">
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn btn-main" onclick="submitSacrifice()">Confirm</button>
+                <button class="btn" onclick="closeSacrificeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== JavaScript ===== -->
+    <script src="/static/js/data.js"></script>
+    <script src="/static/js/cages.js"></script>
+    <script src="/static/js/mice.js"></script>
+    <script src="/static/js/experiment.js"></script>
+
+</body>
+</html>
